@@ -41,7 +41,19 @@ namespace pb
         return result;
     }
 
-    static std::vector<Step> bo3_steps()        // Default bo3 system for valorant
+    static std::vector<Step> bo1_steps()
+{       // 7-map pool BO1 system
+    return {
+        {ActionType::Ban, 0},
+        {ActionType::Ban, 1},
+        {ActionType::Ban, 0},
+        {ActionType::Ban, 1},
+        {ActionType::Ban, 0},
+        {ActionType::Ban, 1},
+    };
+}
+
+    static std::vector<Step> bo3_steps()        // Bo3 system for valorant
     {
         return {
             {ActionType::Ban, TEAM_A},
@@ -86,11 +98,16 @@ namespace pb
         m.currentTurnTeam = TEAM_A;
         m.currentStepIndex = 0;     // steps are zero-indexed
         m.availableMaps = get_default_maps();
-        m.steps = bo3_steps();
+        m.steps = bo1_steps();
         m.deciderMapId = 0;
         m.lastUpdated = std::chrono::steady_clock::now();
         m.teamCaptainTokens[TEAM_A].clear();
         m.teamCaptainTokens[TEAM_B].clear();
+        m.slotsPerTeam = slotsPerTeam;
+
+        if(slotsPerTeam == 1) {
+            m.steps = bo3_steps();
+        }
 
         m.teams[TEAM_A].name = teamAName;
         m.teams[TEAM_B].name = teamBName;
@@ -194,6 +211,8 @@ namespace pb
         oss << "\"currentTurnTeam\":" << m.currentTurnTeam << ",";
         oss << "\"currentStepIndex\":" << m.currentStepIndex << ",";
         oss << "\"deciderMapId\":" << m.deciderMapId << ",";
+        std::string seriesType = (m.slotsPerTeam == 0) ? "bo1" : "bo3";
+        oss << "\"seriesType\":\"" << seriesType << "\",";
 
         oss << "\"teams\":[";
         for (int i = 0; i < 2; ++i)

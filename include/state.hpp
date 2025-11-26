@@ -51,6 +51,7 @@ namespace pb {
         int currentTurnTeam;                // Index of the team whose turn it is 
         std::size_t currentStepIndex;       // Index of the current step in the pick/ban sequence
         std::chrono::steady_clock::time_point lastUpdated;
+        int slotsPerTeam;
 
         Team teams[2];
         std::vector<Map> availableMaps;
