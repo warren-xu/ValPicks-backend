@@ -202,6 +202,9 @@ namespace pb
         oss << "\"deciderMapId\":" << m.deciderMapId << ",";
         std::string seriesType = m.seriesType;
         oss << "\"seriesType\":\"" << seriesType << "\",";
+        oss << "\"captainTaken\":["
+            << (m.teamCaptainTokens[0].empty() ? false : true) << ","
+            << (m.teamCaptainTokens[1].empty() ? false : true) << "],";
 
         oss << "\"teams\":[";
         for (int i = 0; i < 2; ++i)
