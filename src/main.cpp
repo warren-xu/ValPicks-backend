@@ -65,22 +65,9 @@ void handle_client(int client_fd)
         std::string teamA = get_query_param(req.query, "teamA");
         std::string teamB = get_query_param(req.query, "teamB");
         std::string series = get_query_param(req.query, "series");
-        int slots = 0;      // default to BO1
-        if(series == "bo1") {
-            slots = 0;
-        } else if(series == "bo3") {
-            slots = 1;
-        }
-        else if (!series.empty())
-        {
-            resp = make_http_response("Unknown series type\n", "text/plain", 400, "Bad Request");
-            send(client_fd, resp.c_str(), resp.size(), 0);
-            close(client_fd);
-            return;
-        }
 
         std::lock_guard<std::mutex> lock(g_mutex);
-        Match &m = create_match(teamA, teamB, slots);
+        Match &m = create_match(teamA, teamB, series);
         std::string body = "{\"matchId\":\"" + m.id + "\"}";
         resp = make_http_response(body, "application/json");
     }

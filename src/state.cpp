@@ -42,18 +42,18 @@ namespace pb
     }
 
     static std::vector<Step> bo1_steps()
-{       // 7-map pool BO1 system
-    return {
-        {ActionType::Ban, 0},
-        {ActionType::Ban, 1},
-        {ActionType::Ban, 0},
-        {ActionType::Ban, 1},
-        {ActionType::Ban, 0},
-        {ActionType::Ban, 1},
-    };
-}
+    {
+        return {
+            {ActionType::Ban, 0},
+            {ActionType::Ban, 1},
+            {ActionType::Ban, 0},
+            {ActionType::Ban, 1},
+            {ActionType::Ban, 0},
+            {ActionType::Ban, 1},
+        };
+    }
 
-    static std::vector<Step> bo3_steps()        // Bo3 system for valorant
+    static std::vector<Step> bo3_steps() // Bo3 system for valorant
     {
         return {
             {ActionType::Ban, TEAM_A},
@@ -72,16 +72,18 @@ namespace pb
             for (int b : team.bannedMapIds)
             {
                 if (b == mapId)
-                {
                     return false;
-                }
             }
 
-            // already picked?
-            for (const auto &slot : team.slots)
-                if (slot.mapId == mapId)
+            for (int p : team.pickedMapIds)
+            {
+                if (p == mapId)
                     return false;
+            }
         }
+
+        if (m.deciderMapId == mapId)
+            return false;
         return true;
     }
 
@@ -90,33 +92,28 @@ namespace pb
         g_matches.clear();
     }
 
-    Match &create_match(const std::string &teamAName, const std::string &teamBName, int slotsPerTeam)
+    Match &create_match(const std::string &teamAName, const std::string &teamBName, std::string series)
     {
         Match m;
         m.id = generate_match_id();
         m.phase = Phase::BanPhase;
         m.currentTurnTeam = TEAM_A;
-        m.currentStepIndex = 0;     // steps are zero-indexed
+        m.currentStepIndex = 0; // steps are zero-indexed
         m.availableMaps = get_default_maps();
         m.steps = bo1_steps();
         m.deciderMapId = 0;
+        m.seriesType = series;
         m.lastUpdated = std::chrono::steady_clock::now();
         m.teamCaptainTokens[TEAM_A].clear();
         m.teamCaptainTokens[TEAM_B].clear();
-        m.slotsPerTeam = slotsPerTeam;
 
-        if(slotsPerTeam == 1) {
+        if (series == "bo3")
+        {
             m.steps = bo3_steps();
         }
 
         m.teams[TEAM_A].name = teamAName;
         m.teams[TEAM_B].name = teamBName;
-
-        for (int i = 0; i < slotsPerTeam; ++i)
-        {
-            m.teams[TEAM_A].slots.push_back(TeamSlot{});
-            m.teams[TEAM_B].slots.push_back(TeamSlot{});
-        }
 
         g_matches[m.id] = m;
         return g_matches[m.id];
@@ -156,15 +153,7 @@ namespace pb
         }
         else if (action == ActionType::Pick)
         {
-            // Assign map to the first available slot
-            for (auto &slot : m.teams[teamIndex].slots)
-            {
-                if (slot.mapId == UNASSIGNED_MAP_ID) // 0 means unassigned
-                {
-                    slot.mapId = mapId;
-                    break;
-                }
-            }
+            m.teams[teamIndex].pickedMapIds.push_back(mapId);
         }
 
         // Advance to next step
@@ -211,7 +200,7 @@ namespace pb
         oss << "\"currentTurnTeam\":" << m.currentTurnTeam << ",";
         oss << "\"currentStepIndex\":" << m.currentStepIndex << ",";
         oss << "\"deciderMapId\":" << m.deciderMapId << ",";
-        std::string seriesType = (m.slotsPerTeam == 0) ? "bo1" : "bo3";
+        std::string seriesType = m.seriesType;
         oss << "\"seriesType\":\"" << seriesType << "\",";
 
         oss << "\"teams\":[";
@@ -220,24 +209,21 @@ namespace pb
             const Team &team = m.teams[i];
             oss << "{";
             oss << "\"name\":\"" << team.name << "\",";
-            oss << "\"slots\":[";
-            for (size_t j = 0; j < team.slots.size(); ++j)
-            {
-                const TeamSlot &slot = team.slots[j];
-                oss << "{";
-                oss << "\"playerName\":\"" << slot.playerName << "\",";
-                oss << "\"mapId\":" << slot.mapId;
-                oss << "}";
-                if (j + 1 < team.slots.size())
-                    oss << ",";
-            }
-            oss << "],";
 
             oss << "\"bannedMapIds\":[";
             for (size_t j = 0; j < team.bannedMapIds.size(); ++j)
             {
                 oss << team.bannedMapIds[j];
                 if (j + 1 < team.bannedMapIds.size())
+                    oss << ",";
+            }
+            oss << "],";
+
+            oss << "\"pickedMapIds\":[";
+            for (size_t j = 0; j < team.pickedMapIds.size(); ++j)
+            {
+                oss << team.pickedMapIds[j];
+                if (j + 1 < team.pickedMapIds.size())
                     oss << ",";
             }
             oss << "]";

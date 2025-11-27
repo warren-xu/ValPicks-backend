@@ -35,8 +35,8 @@ namespace pb {
 
     struct Team {
         std::string name;
-        std::vector<TeamSlot> slots;
         std::vector<int> bannedMapIds;
+        std::vector<int> pickedMapIds;
     };
 
     struct Step {
@@ -51,7 +51,7 @@ namespace pb {
         int currentTurnTeam;                // Index of the team whose turn it is 
         std::size_t currentStepIndex;       // Index of the current step in the pick/ban sequence
         std::chrono::steady_clock::time_point lastUpdated;
-        int slotsPerTeam;
+        std::string seriesType;
 
         Team teams[2];
         std::vector<Map> availableMaps;
@@ -61,7 +61,7 @@ namespace pb {
         int deciderMapId = 0;
     };
     void init_state();
-    Match& create_match(const std::string& teamAName, const std::string& teamBName, int slotsPerTeam);
+    Match& create_match(const std::string& teamAName, const std::string& teamBName, std::string series);
     Match* get_match(const std::string& matchId);
 
     bool apply_action(Match& m, int teamIndex, ActionType action, int mapId);
