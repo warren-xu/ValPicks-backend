@@ -30,7 +30,7 @@ namespace pb
     static std::vector<Map> get_default_maps()
     {
         std::vector<std::string> names = {
-            "Abyss", "Bind", "Corrode", "Haven", "Pearl", "Split", "Sunset"};
+            "Abyss", "Ascent", "Corrode", "Haven", "Pearl", "Split", "Sunset"};
 
         std::vector<Map> result;
         int id = 1;

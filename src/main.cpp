@@ -214,7 +214,7 @@ void handle_client(int client_fd)
                     }
                     else
                     {
-                        // someone else trying to join as captain -> spectator
+                        // redirect to spectator
                         role = "spectator";
                     }
                 }
