@@ -6,7 +6,6 @@
 #include <iostream>
 #include <chrono>
 
-
 namespace pb {
     const int TEAM_A = 0;
     const int TEAM_B = 1;
@@ -25,7 +24,7 @@ namespace pb {
     struct Map {
         int id;
         std::string name;
-        
+        std::string previewUrl;
     };
 
     struct TeamSlot {

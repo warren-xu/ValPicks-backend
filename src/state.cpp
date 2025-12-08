@@ -17,9 +17,9 @@ namespace pb
     // Helpers
     std::string generate_match_id()
     {
-        static const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        static const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         std::uniform_int_distribution<> dist(0, sizeof(chars) - 2); // -2 to exclude null terminator
-        std::string s(8, '0');
+        std::string s(6, '0');
         for (char &c : s)
         {
             c = chars[dist(rng())];
@@ -32,11 +32,20 @@ namespace pb
         std::vector<std::string> names = {
             "Abyss", "Ascent", "Corrode", "Haven", "Pearl", "Split", "Sunset"};
 
+        std::vector<std::string> previewUrls = {
+            "",
+            "",
+            "",
+            "public/havenb.mp4",
+            "",
+            "",
+            ""};
+
         std::vector<Map> result;
         int id = 1;
-        for (auto &n : names)
+        for (uint64_t i = 0; i < names.size(); ++i)
         {
-            result.push_back(Map{id++, n});
+            result.push_back(Map{id++, names[i], previewUrls[i]});
         }
         return result;
     }
@@ -236,18 +245,19 @@ namespace pb
                 oss << ",";
         }
         oss << "],";
-
         oss << "\"availableMaps\":[";
         for (size_t i = 0; i < m.availableMaps.size(); ++i)
         {
             const Map &map = m.availableMaps[i];
             oss << "{";
             oss << "\"id\":" << map.id << ",";
-            oss << "\"name\":\"" << map.name << "\"";
+            oss << "\"name\":\"" << map.name << "\",";
+            oss << "\"previewUrl\":\"" << map.previewUrl << "\"";
             oss << "}";
             if (i + 1 < m.availableMaps.size())
                 oss << ",";
         }
+
         oss << "]";
 
         oss << "}";
