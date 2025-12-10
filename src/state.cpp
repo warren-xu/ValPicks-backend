@@ -40,12 +40,20 @@ namespace pb
             "",
             "",
             ""};
-
+        std::vector<std::string> mapImgUrls = {
+            "",
+            "",
+            "",
+            "",
+            "public/mapimgs/pearl.webp",
+            "",
+            ""
+        };
         std::vector<Map> result;
         int id = 1;
         for (uint64_t i = 0; i < names.size(); ++i)
         {
-            result.push_back(Map{id++, names[i], previewUrls[i]});
+            result.push_back(Map{id++, names[i], previewUrls[i], mapImgUrls[i]});
         }
         return result;
     }
@@ -53,12 +61,12 @@ namespace pb
     static std::vector<Step> bo1_steps()
     {
         return {
-            {ActionType::Ban, 0},
-            {ActionType::Ban, 1},
-            {ActionType::Ban, 0},
-            {ActionType::Ban, 1},
-            {ActionType::Ban, 0},
-            {ActionType::Ban, 1},
+            {ActionType::Ban, TEAM_A}, // Team A Bans
+            {ActionType::Ban, TEAM_B}, // Team B Bans
+            {ActionType::Ban, TEAM_A}, // Team A Bans
+            {ActionType::Ban, TEAM_B}, // Team B Bans
+            {ActionType::Pick, TEAM_A}, // Team A Picks the Map
+            {ActionType::Side, TEAM_B}, // Team B Picks the Side
         };
     }
 
@@ -151,9 +159,13 @@ namespace pb
             return false; // Not this team's turn or wrong action
         }
 
-        if (!is_map_available(m, mapId))
+        // Only check map availability if not picking a side
+        if (action != ActionType::Side) 
         {
-            return false; // Map already banned or picked
+            if (!is_map_available(m, mapId))
+            {
+                return false; // Map already banned or picked
+            }
         }
 
         if (action == ActionType::Ban)
@@ -164,35 +176,47 @@ namespace pb
         {
             m.teams[teamIndex].pickedMapIds.push_back(mapId);
         }
+        else if (action == ActionType::Side)
+        {
+            m.deciderSide = mapId; 
+        }
 
         // Advance to next step
         m.currentStepIndex++;
+
+        // check completion
         if (m.currentStepIndex >= m.steps.size())
         {
             m.phase = Phase::Completed;
 
-            int remainingMapId = -1;
-            for (const auto &map : m.availableMaps)
+            // Logic for bo1: each side bans 2, team a picks the map
+            if (m.seriesType == "bo1") 
             {
-                if (is_map_available(m, map.id))
-                {
-                    remainingMapId = map.id;
-                    break;
-                }
+                m.deciderMapId = m.teams[TEAM_A].pickedMapIds[0];
             }
-            m.deciderMapId = remainingMapId;
+            else 
+            {
+                // Logic for bo3 (banning until phase changes)
+                int remainingMapId = -1;
+                for (const auto &map : m.availableMaps)
+                {
+                    if (is_map_available(m, map.id))
+                    {
+                        remainingMapId = map.id;
+                        break;
+                    }
+                }
+                m.deciderMapId = remainingMapId;
+            }
         }
         else
         {
             m.currentTurnTeam = m.steps[m.currentStepIndex].teamIndex;
-            if (m.steps[m.currentStepIndex].action == ActionType::Pick)
-            {
-                m.phase = Phase::PickPhase;
-            }
-            else
-            {
-                m.phase = Phase::BanPhase;
-            }
+            // Set Phase Label based on next action
+            ActionType nextAction = m.steps[m.currentStepIndex].action;
+            if (nextAction == ActionType::Pick) m.phase = Phase::PickPhase;
+            else if (nextAction == ActionType::Side) m.phase = Phase::SidePhase;
+            else m.phase = Phase::BanPhase;
         }
 
         m.lastUpdated = std::chrono::steady_clock::now();
@@ -214,7 +238,7 @@ namespace pb
         oss << "\"captainTaken\":["
             << (m.teamCaptainTokens[0].empty() ? false : true) << ","
             << (m.teamCaptainTokens[1].empty() ? false : true) << "],";
-
+        oss << "\"deciderSide\":" << m.deciderSide << ","; // Ensure 'deciderSide' is in your struct
         oss << "\"teams\":[";
         for (int i = 0; i < 2; ++i)
         {
@@ -252,7 +276,8 @@ namespace pb
             oss << "{";
             oss << "\"id\":" << map.id << ",";
             oss << "\"name\":\"" << map.name << "\",";
-            oss << "\"previewUrl\":\"" << map.previewUrl << "\"";
+            oss << "\"previewUrl\":\"" << map.previewUrl << "\",";
+            oss << "\"mapImgUrl\":\"" << map.mapImgUrl << "\"";
             oss << "}";
             if (i + 1 < m.availableMaps.size())
                 oss << ",";

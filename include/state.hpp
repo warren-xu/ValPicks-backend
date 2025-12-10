@@ -11,20 +11,23 @@ namespace pb {
     const int TEAM_B = 1;
     const int UNASSIGNED_MAP_ID = 0;
     enum class Phase {
-        BanPhase,
-        PickPhase,
-        Completed
-    };
+    BanPhase = 0,
+    PickPhase = 1,
+    SidePhase = 2, 
+    Completed = 3 
+};
 
     enum class ActionType {
         Ban,
-        Pick
+        Pick,
+        Side
     };
 
     struct Map {
         int id;
         std::string name;
         std::string previewUrl;
+        std::string mapImgUrl;
     };
 
     struct TeamSlot {
@@ -56,6 +59,7 @@ namespace pb {
         std::vector<Map> availableMaps;
         std::vector<Step> steps;
         std::string teamCaptainTokens[2];
+        int deciderSide = -1;
 
         int deciderMapId = 0;
     };

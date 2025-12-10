@@ -73,8 +73,10 @@ std::string handle_match_http(const HttpRequest &req)
             at = ActionType::Ban;
         else if (actStr == "pick")
             at = ActionType::Pick;
+        else if (actStr == "side")
+            at = ActionType::Side;
         else
-            return make_http_response("Unknown action\n", "text/plain", 400, "Bad Request");
+            return make_http_response("Unknown action in determining action type\n", "text/plain", 400, "Bad Request");
 
         auto &ctx = get_match_context();
         std::lock_guard<std::mutex> lock(ctx.matchMutex);
