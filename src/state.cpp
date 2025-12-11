@@ -75,10 +75,17 @@ namespace pb
         return {
             {ActionType::Ban, TEAM_A},
             {ActionType::Ban, TEAM_B},
-            {ActionType::Pick, TEAM_A},
-            {ActionType::Pick, TEAM_B},
+            
+            {ActionType::Pick, TEAM_A},  // Team A Picks Map 1
+            {ActionType::Side, TEAM_B},  // Team B Picks Side for Map 1
+            
+            {ActionType::Pick, TEAM_B},  // Team B Picks Map 2
+            {ActionType::Side, TEAM_A},  // Team A Picks Side for Map 2
+            
             {ActionType::Ban, TEAM_A},
             {ActionType::Ban, TEAM_B},
+            
+            {ActionType::Side, TEAM_A},  // Team A Picks Side for Decider map
         };
     }
 
