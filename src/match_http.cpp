@@ -26,6 +26,12 @@ std::string handle_match_http(const HttpRequest &req)
 {
     auto &ctx = get_match_context();
 
+    if (req.method == "OPTIONS")
+    {
+        // return empty 204 with CORS headers
+        return make_http_response("", "text/plain", 204, "No Content");
+    }
+
     if (req.method == "GET" && req.path == "/match/create")
     {
         std::string teamA = get_query_param(req.query, "teamA");
@@ -110,7 +116,7 @@ std::string handle_match_http(const HttpRequest &req)
     {
         std::string id = get_query_param(req.query, "id");
         std::string teamStr = get_query_param(req.query, "team");
-        std::string token = get_query_param(req.query, "token");  // optional existing token
+        std::string token = get_query_param(req.query, "token");
 
         std::lock_guard<std::mutex> lock(ctx.matchMutex);
         Match *m = get_match(id);

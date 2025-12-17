@@ -8,10 +8,12 @@
 #include <string>
 #include <sstream>
 
-void handle_client_connection(int client_fd) {
+void handle_client_connection(int client_fd)
+{
     char buffer[4096];
     int bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes <= 0) {
+    if (bytes <= 0)
+    {
         close(client_fd);
         return;
     }
@@ -19,7 +21,8 @@ void handle_client_connection(int client_fd) {
     std::string raw(buffer);
 
     HttpRequest req;
-    if (!parse_http_request(raw, req)) {
+    if (!parse_http_request(raw, req))
+    {
         std::string resp = make_http_response(
             "Bad Request\n", "text/plain", 400, "Bad Request");
         send(client_fd, resp.c_str(), resp.size(), 0);
@@ -27,10 +30,20 @@ void handle_client_connection(int client_fd) {
         return;
     }
 
+    if (req.method == "OPTIONS")
+    {
+        // return empty 204 with CORS headers
+        std::string resp = make_http_response("", "text/plain", 204, "No Content");
+        send(client_fd, resp.c_str(), resp.size(), 0);
+        close(client_fd);
+        return;
+    }
     // WebSocket upgrade
-    if (req.method == "GET" && req.path == "/ws") {
+    if (req.method == "GET" && req.path == "/ws")
+    {
         std::string secKey;
-        if (!is_websocket_upgrade(raw, secKey)) {
+        if (!is_websocket_upgrade(raw, secKey))
+        {
             std::string resp = make_http_response(
                 "Bad WS upgrade\n", "text/plain", 400, "Bad Request");
             send(client_fd, resp.c_str(), resp.size(), 0);
