@@ -30,24 +30,24 @@ namespace pb
     static std::vector<Map> get_default_maps()
     {
         std::vector<std::string> names = {
-            "Abyss", "Ascent", "Corrode", "Haven", "Pearl", "Split", "Sunset"};
+            "Abyss", "Ascent", "Bind", "Haven", "Icebox", "Lotus", "Split"};
 
         std::vector<std::string> previewUrls = {
-            "",
-            "",
-            "",
-            "public/havenb.mp4",
-            "",
-            "",
-            ""};
+            "public/videos/abyss.mp4",
+            "public/videos/ascent.mp4",
+            "public/videos/bind.mp4",
+            "public/videos/havenb.mp4",
+            "public/videos/icebox.mp4",
+            "public/videos/lotus.mp4",
+            "public/videos/split.mp4"};
         std::vector<std::string> mapImgUrls = {
-            "",
-            "",
-            "",
-            "",
-            "public/mapimgs/pearl.webp",
-            "",
-            ""
+            "public/mapimgs/abyss.webp",
+            "public/mapimgs/ascent.webp",
+            "public/mapimgs/bind.webp",
+            "public/mapimgs/haven.webp",
+            "public/mapimgs/icebox.webp",
+            "public/mapimgs/lotus.webp",
+            "public/mapimgs/split.webp"
         };
         std::vector<Map> result;
         int id = 1;

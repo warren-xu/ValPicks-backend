@@ -72,7 +72,7 @@ int main()
         return 1;
     }
 
-    std::cout << "Listening on http://localhost:" << port << "\n";
+    std::cout << "Listening on " << port << "\n";
 
     while (true)
     {
