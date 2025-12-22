@@ -137,6 +137,9 @@ namespace pb
             m.steps = bo3_steps();
         }
 
+        m.stepMapIds.assign(m.steps.size(), pb::UNASSIGNED_MAP_ID);
+        m.stepSideVals.assign(m.steps.size(), -1);
+
         m.teams[TEAM_A].name = teamAName;
         m.teams[TEAM_B].name = teamBName;
 
@@ -167,6 +170,8 @@ namespace pb
             return false; // Not this team's turn or wrong action
         }
 
+        const auto stepIdx = m.currentStepIndex;
+
         // Only check map availability if not picking a side
         if (action != ActionType::Side)
         {
@@ -175,17 +180,40 @@ namespace pb
                 return false; // Map already banned or picked
             }
         }
-
         if (action == ActionType::Ban)
         {
             m.teams[teamIndex].bannedMapIds.push_back(mapId);
+            m.stepMapIds[stepIdx] = mapId;
         }
         else if (action == ActionType::Pick)
         {
             m.teams[teamIndex].pickedMapIds.push_back(mapId);
+            m.currentSideMapId = mapId;
+            m.stepMapIds[stepIdx] = mapId;
         }
         else if (action == ActionType::Side)
         {
+            // mapId parameter is actually the side in this case (CHANGE POST-MVP)
+            const int side = mapId;
+
+            if (m.currentSideMapId == 0)
+            {
+                int lastPicked = pb::UNASSIGNED_MAP_ID;
+                for (int t = 0; t < 2; ++t)
+                {
+                    if (!m.teams[t].pickedMapIds.empty())
+                        lastPicked = m.teams[t].pickedMapIds.back();
+                }
+                m.currentSideMapId = lastPicked;
+            }
+
+            // store side choice for that map
+            if (m.currentSideMapId != pb::UNASSIGNED_MAP_ID)
+            {
+                m.mapSides[m.currentSideMapId] = side;
+                m.stepMapIds[stepIdx] = m.currentSideMapId;
+                m.stepSideVals[stepIdx] = side;
+            }
             m.deciderSide = mapId;
             m.deciderSidePickerTeam = teamIndex;
         }
@@ -303,8 +331,35 @@ namespace pb
                 oss << ",";
         }
 
-        oss << "]";
+        oss << "],";
+        oss << "\"stepMapIds\":[";
+        for (size_t i = 0; i < m.stepMapIds.size(); ++i)
+        {
+            oss << m.stepMapIds[i];
+            if (i + 1 < m.stepMapIds.size())
+                oss << ",";
+        }
+        oss << "],";
 
+        oss << "\"stepSideVals\":[";
+        for (size_t i = 0; i < m.stepSideVals.size(); ++i)
+        {
+            oss << m.stepSideVals[i];
+            if (i + 1 < m.stepSideVals.size())
+                oss << ",";
+        }
+        oss << "],";
+        oss << "\"steps\":[";
+        for (size_t i = 0; i < m.steps.size(); ++i)
+        {
+            oss << "{";
+            oss << "\"action\":" << static_cast<int>(m.steps[i].action) << ",";
+            oss << "\"teamIndex\":" << m.steps[i].teamIndex;
+            oss << "}";
+            if (i + 1 < m.steps.size())
+                oss << ",";
+        }
+        oss << "]";
         oss << "}";
         return oss.str();
     }
