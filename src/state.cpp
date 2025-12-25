@@ -415,6 +415,7 @@ namespace pb
             auto age = now - it->second.lastUpdated;
             if (age > maxAge)
             {
+                std::cout << "[Cleanup] Deleting expired match ID: " << it->second.id << std::endl;  
                 it = g_matches.erase(it);
             }
             else

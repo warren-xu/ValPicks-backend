@@ -37,7 +37,7 @@ int main()
             std::this_thread::sleep_for(10min);
             auto& ctx = get_match_context();
             std::lock_guard<std::mutex> lock(ctx.matchMutex);
-            pb::prune_old_matches(std::chrono::hours(1));
+            pb::prune_old_matches(std::chrono::minutes(30));
         } })
         .detach();
 
