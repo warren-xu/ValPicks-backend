@@ -343,6 +343,68 @@ namespace pb
         oss << "}";
         return oss.str();
     }
+    std::string match_to_light_json(const Match &m)
+{
+    std::ostringstream oss;
+    oss << "{";
+    oss << "\"id\":\"" << m.id << "\",";
+    oss << "\"phase\":" << static_cast<int>(m.phase) << ",";
+    oss << "\"currentTurnTeam\":" << m.currentTurnTeam << ",";
+    oss << "\"currentStepIndex\":" << m.currentStepIndex << ",";
+    oss << "\"deciderMapId\":" << m.deciderMapId << ",";
+    
+    oss << "\"deciderSide\":" << m.deciderSide << ",";
+    oss << "\"deciderSidePickerTeam\":" << m.deciderSidePickerTeam << ",";
+
+    oss << "\"captainTaken\":["
+        << (m.teamCaptainTokens[0].empty() ? false : true) << ","
+        << (m.teamCaptainTokens[1].empty() ? false : true) << "],";
+
+    oss << "\"teams\":[";
+    for (int i = 0; i < 2; ++i)
+    {
+        const Team &team = m.teams[i];
+        oss << "{";
+
+        oss << "\"bannedMapIds\":[";
+        for (size_t j = 0; j < team.bannedMapIds.size(); ++j)
+        {
+            oss << team.bannedMapIds[j];
+            if (j + 1 < team.bannedMapIds.size()) oss << ",";
+        }
+        oss << "],";
+
+        oss << "\"pickedMapIds\":[";
+        for (size_t j = 0; j < team.pickedMapIds.size(); ++j)
+        {
+            oss << team.pickedMapIds[j];
+            if (j + 1 < team.pickedMapIds.size()) oss << ",";
+        }
+        oss << "]";
+        oss << "}";
+        if (i + 1 < 2) oss << ",";
+    }
+    oss << "],";
+
+    oss << "\"stepMapIds\":[";
+    for (size_t i = 0; i < m.stepMapIds.size(); ++i)
+    {
+        oss << m.stepMapIds[i];
+        if (i + 1 < m.stepMapIds.size()) oss << ",";
+    }
+    oss << "],";
+
+    oss << "\"stepSideVals\":[";
+    for (size_t i = 0; i < m.stepSideVals.size(); ++i)
+    {
+        oss << m.stepSideVals[i];
+        if (i + 1 < m.stepSideVals.size()) oss << ",";
+    }
+    oss << "]"; 
+
+    oss << "}";
+    return oss.str();
+}
 
     void prune_old_matches(std::chrono::seconds maxAge)
     {

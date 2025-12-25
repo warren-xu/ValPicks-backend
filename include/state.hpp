@@ -84,6 +84,7 @@ namespace pb
 
     bool apply_action(Match &m, int teamIndex, ActionType action, int mapId);
     std::string match_to_json(const Match &m);
+    std::string match_to_light_json(const Match &m);
     std::string generate_match_id();
     void prune_old_matches(std::chrono::seconds maxAge);
 };
