@@ -12,6 +12,7 @@ namespace pb
     const int TEAM_A = 0;
     const int TEAM_B = 1;
     const int UNASSIGNED_MAP_ID = 0;
+    const std::string baseR2Url = "https://pub-ce63ea8bab094ee7974fd9589f7c43ac.r2.dev/";
     enum class Phase
     {
         BanPhase = 0,

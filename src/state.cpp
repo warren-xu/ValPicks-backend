@@ -33,13 +33,13 @@ namespace pb
             "Abyss", "Ascent", "Bind", "Haven", "Icebox", "Lotus", "Split"};
 
         std::vector<std::string> previewUrls = {
-            "public/videos/abyss.mp4",
-            "public/videos/ascent.mp4",
-            "public/videos/bind.mp4",
-            "public/videos/havenb.mp4",
-            "public/videos/icebox.mp4",
-            "public/videos/lotus.mp4",
-            "public/videos/split.mp4"};
+            baseR2Url + "abyss.mp4",
+            baseR2Url + "ascent.mp4",
+            baseR2Url + "bind.mp4",
+            baseR2Url + "havenb.mp4",
+            baseR2Url + "icebox.mp4",
+            baseR2Url + "lotus.mp4",
+            baseR2Url + "split.mp4"};
         std::vector<std::string> mapImgUrls = {
             "public/mapimgs/abyss.webp",
             "public/mapimgs/ascent.webp",
