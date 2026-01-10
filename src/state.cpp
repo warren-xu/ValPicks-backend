@@ -63,9 +63,10 @@ namespace pb
             {ActionType::Ban, TEAM_A},  // Team A Bans
             {ActionType::Ban, TEAM_B},  // Team B Bans
             {ActionType::Ban, TEAM_A},  // Team A Bans
-            {ActionType::Ban, TEAM_A},  // Team B Bans
-            {ActionType::Pick, TEAM_B}, // Team A Picks the Map
-            {ActionType::Side, TEAM_A}, // Team B Picks the Side
+            {ActionType::Ban, TEAM_B},  // Team B Bans
+            {ActionType::Ban, TEAM_A}, // Alternates
+            {ActionType::Ban, TEAM_B},
+            {ActionType::Side, TEAM_A}, // Team A Picks the Side
         };
     }
 
@@ -73,18 +74,18 @@ namespace pb
     {
         return {
             {ActionType::Ban, TEAM_A},
-            {ActionType::Ban, TEAM_B},
-
-            {ActionType::Pick, TEAM_A}, // Team A Picks Map 1
-            {ActionType::Side, TEAM_B}, // Team B Picks Side for Map 1
-
-            {ActionType::Pick, TEAM_B}, // Team B Picks Map 2
-            {ActionType::Side, TEAM_A}, // Team A Picks Side for Map 2
-
             {ActionType::Ban, TEAM_A},
-            {ActionType::Ban, TEAM_B},
 
-            {ActionType::Side, TEAM_A}, // Team A Picks Side for Decider map
+            {ActionType::Pick, TEAM_B}, // Team A Picks Map 1
+            {ActionType::Side, TEAM_A}, // Team B Picks Side for Map 1
+
+            {ActionType::Pick, TEAM_A}, // Team B Picks Map 2
+            {ActionType::Side, TEAM_B}, // Team A Picks Side for Map 2
+
+            {ActionType::Ban, TEAM_B},
+            {ActionType::Ban, TEAM_A},
+
+            {ActionType::Side, TEAM_B}, // Team A Picks Side for Decider map
         };
     }
 
@@ -424,5 +425,6 @@ namespace pb
             }
         }
     }
+
 
 }
