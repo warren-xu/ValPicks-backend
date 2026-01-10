@@ -111,6 +111,16 @@ namespace pb
         return true;
     }
 
+    static int find_remaining_map_id(const Match& m)
+    {
+        for (const auto& map : m.availableMaps)
+        {
+            if (is_map_available(m, map.id))
+                return map.id;
+        }
+        return pb::UNASSIGNED_MAP_ID;
+    }
+
     void init_state()
     {
         g_matches.clear();
@@ -128,6 +138,7 @@ namespace pb
         m.deciderMapId = 0;
         m.deciderSide = -1;
         m.deciderSidePickerTeam = -1;
+        m.currentSideMapId = pb::UNASSIGNED_MAP_ID;
         m.seriesType = series;
         m.lastUpdated = std::chrono::steady_clock::now();
         m.teamCaptainTokens[TEAM_A].clear();
@@ -189,7 +200,6 @@ namespace pb
             if (m.seriesType == "bo1") {
                  m.deciderSide = side;
                  m.deciderSidePickerTeam = teamIndex;
-                 m.deciderMapId = m.currentSideMapId; 
             }
             else if (m.currentSideMapId == m.deciderMapId && m.deciderMapId != 0) {
                  m.deciderSide = side;
@@ -212,19 +222,21 @@ namespace pb
         if (m.currentStepIndex >= m.steps.size())
         {
             m.phase = Phase::Completed;
-            
-            // Logic for bo1: each side bans 2, team a picks the map
-            if (m.seriesType == "bo1" && m.deciderMapId == 0) {
-                 if (!m.teams[TEAM_B].pickedMapIds.empty()) {
-                    m.deciderMapId = m.teams[TEAM_B].pickedMapIds[0];
-                }
-            }
         }
         else
         {
             const auto &nextStep = m.steps[m.currentStepIndex];
             
             m.currentTurnTeam = nextStep.teamIndex;
+
+            if (m.seriesType == "bo1" && nextStep.action == ActionType::Side && m.deciderMapId == 0)
+            {
+                int remaining = find_remaining_map_id(m);
+                if (remaining == pb::UNASSIGNED_MAP_ID) return false; // should not happen if bans are correct
+                m.deciderMapId = remaining;
+                m.currentSideMapId = remaining;
+                m.stepMapIds[m.currentStepIndex] = remaining; // record which map the side step applies to
+            }
 
             // calculate decider map if we are at the last step of bo3
             if (m.seriesType == "bo3" && m.currentStepIndex == m.steps.size() - 1)
@@ -426,5 +438,5 @@ namespace pb
         }
     }
 
-
 }
+
