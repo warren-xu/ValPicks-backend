@@ -13,11 +13,17 @@ void broadcast_match_update(const pb::Match& m) {
     std::string payload = pb::match_to_json(m);
 
     auto& ctx = get_match_context();
-    std::lock_guard<std::mutex> lock(ctx.wsClientsMutex);
-    for (auto it = ctx.wsClients.begin(); it != ctx.wsClients.end(); ++it) {
-        if (it->matchId == m.id) {
-            send_ws_text(it->fd, payload);
+    std::vector<int> targets;
+    {
+        std::lock_guard<std::mutex> lock(ctx.wsClientsMutex);
+        targets.reserve(8);
+        for (const auto &c : ctx.wsClients) {
+            if (c.matchId == m.id) targets.push_back(c.fd);
         }
+    }
+
+    for (int fd : targets) {
+        send_ws_text(fd, payload);
     }
 }
 
@@ -37,6 +43,7 @@ void handle_websocket_client(int client_fd) {
     auto& ctx = get_match_context();
     {
         std::lock_guard<std::mutex> lock(ctx.wsClientsMutex);
+        if (ctx.wsClients.capacity() == 0) ctx.wsClients.reserve(64);
         ctx.wsClients.push_back(WsClient{client_fd, matchId});
     }
 
@@ -58,11 +65,13 @@ void handle_websocket_client(int client_fd) {
     {
         std::lock_guard<std::mutex> lock(ctx.wsClientsMutex);
         auto& v = ctx.wsClients;
-        v.erase(std::remove_if(v.begin(), v.end(),
-                               [client_fd](const WsClient& c) {
-                                   return c.fd == client_fd;
-                               }),
-                v.end());
+        for (size_t i = 0; i < v.size(); ++i) {
+            if (v[i].fd == client_fd) {
+                v[i] = v.back();
+                v.pop_back();
+                break;
+            }
+        }
     }
 
     close(client_fd);

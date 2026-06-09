@@ -15,6 +15,8 @@
 #include <thread>
 #include <mutex>
 #include <chrono> 
+#include <fcntl.h>
+#include "../include/epoll_loop.hpp"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -28,6 +30,12 @@ using namespace pb;
 int main()
 {
     init_state();
+    // initialize epoll loop for non-blocking sends
+    if (!init_epoll_loop()) {
+        std::cerr << "Failed to init epoll loop\n";
+        return 1;
+    }
+    std::thread(run_epoll_loop).detach();
 
     // cleanup thread
     std::thread([]()
@@ -84,6 +92,13 @@ int main()
             perror("accept");
             continue;
         }
+
+        // set non-blocking
+        int flags = fcntl(client_fd, F_GETFL, 0);
+        if (flags >= 0) fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+
+        // register with epoll for async write readiness
+        register_fd_with_epoll(client_fd);
 
         std::thread(handle_client_connection, client_fd).detach();
     }
