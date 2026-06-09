@@ -10,12 +10,14 @@
 struct WsClient {
     int fd;
     std::string matchId;
+    std::string outBuf; // buffered outgoing data when socket would block
 };
 
 struct MatchContext {
     std::mutex matchMutex;
     std::mutex wsClientsMutex;
     std::vector<WsClient> wsClients;
+    MatchContext() { wsClients.reserve(64); }
 };
 
 

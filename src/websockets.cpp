@@ -1,4 +1,39 @@
 #include "../include/websockets.hpp"
+#include "../include/match.hpp"
+#include "../include/epoll_loop.hpp"
+#include <errno.h>
+#include <fcntl.h>
+#include <cstring>
+#include <poll.h>
+
+static ssize_t recv_retry(int fd, void *buf, size_t len)
+{
+    size_t total = 0;
+    while (total < len)
+    {
+        ssize_t n = recv(fd, static_cast<char *>(buf) + total, len - total, 0);
+        if (n > 0)
+        {
+            total += static_cast<size_t>(n);
+            continue;
+        }
+        if (n == 0)
+            return 0;
+        if (errno == EINTR)
+            continue;
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            struct pollfd pfd{};
+            pfd.fd = fd;
+            pfd.events = POLLIN;
+            if (poll(&pfd, 1, -1) <= 0)
+                return -1;
+            continue;
+        }
+        return -1;
+    }
+    return static_cast<ssize_t>(total);
+}
 
 // helper for encoding base64
 std::string base64_encode(const unsigned char *data, size_t len)
@@ -94,7 +129,7 @@ std::string compute_websocket_accept(const std::string &secKey)
 bool recv_ws_frame(int fd, std::string &outPayload)
 {
     uint8_t header[2];
-    int n = recv(fd, header, 2, 0);
+    ssize_t n = recv_retry(fd, header, 2);
     if (n <= 0)
         return false;
 
@@ -112,7 +147,7 @@ bool recv_ws_frame(int fd, std::string &outPayload)
     if (len == 126)
     {
         uint8_t ext[2];
-        n = recv(fd, ext, 2, 0);
+        n = recv_retry(fd, ext, 2);
         if (n <= 0)
             return false;
         len = (ext[0] << 8) | ext[1];
@@ -124,19 +159,14 @@ bool recv_ws_frame(int fd, std::string &outPayload)
     }
 
     uint8_t maskKey[4];
-    n = recv(fd, maskKey, 4, 0);
+    n = recv_retry(fd, maskKey, 4);
     if (n <= 0)
         return false;
 
     std::string payload(len, '\0');
-    size_t received = 0;
-    while (received < len)
-    {
-        n = recv(fd, &payload[received], len - received, 0);
-        if (n <= 0)
-            return false;
-        received += n;
-    }
+    n = recv_retry(fd, payload.data(), len);
+    if (n <= 0)
+        return false;
 
     for (uint64_t i = 0; i < len; ++i)
     {
@@ -185,6 +215,43 @@ void send_ws_text(int fd, const std::string &msg)
         return;
     }
 
-    send(fd, header, headerLen, 0);
-    send(fd, msg.data(), msg.size(), 0);
+    std::string frame;
+    frame.resize(headerLen + msg.size());
+    memcpy(&frame[0], header, headerLen);
+    memcpy(&frame[headerLen], msg.data(), msg.size());
+
+    // attempt non-blocking send
+    ssize_t s = send(fd, frame.data(), frame.size(), 0);
+    if (s == (ssize_t)frame.size()) return; // sent all
+
+    if (s >= 0) {
+        // partial send: buffer remainder
+        size_t offset = (size_t)s;
+        auto& ctx = get_match_context();
+        std::lock_guard<std::mutex> lock(ctx.wsClientsMutex);
+        for (auto &c : ctx.wsClients) {
+            if (c.fd == fd) {
+                c.outBuf.append(frame.data() + offset, frame.size() - offset);
+                enable_epoll_write(fd);
+                return;
+            }
+        }
+        return;
+    }
+
+    if (s < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        // socket would block: buffer entire frame and enable epoll write
+        auto& ctx = get_match_context();
+        std::lock_guard<std::mutex> lock(ctx.wsClientsMutex);
+        for (auto &c : ctx.wsClients) {
+            if (c.fd == fd) {
+                c.outBuf.append(frame);
+                enable_epoll_write(fd);
+                return;
+            }
+        }
+        return;
+    }
+
+    // other errors: ignore for now
 }

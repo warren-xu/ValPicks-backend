@@ -5,13 +5,48 @@
 #include "../include/match_http.hpp"
 
 #include <unistd.h>
+#include <errno.h>
+#include <poll.h>
+#include <cstring>
 #include <string>
 #include <sstream>
+
+static ssize_t recv_http_request(int fd, char *buffer, size_t capacity)
+{
+    size_t total = 0;
+    while (total + 1 < capacity)
+    {
+        ssize_t n = recv(fd, buffer + total, capacity - 1 - total, 0);
+        if (n > 0)
+        {
+            total += static_cast<size_t>(n);
+            buffer[total] = '\0';
+            if (strstr(buffer, "\r\n\r\n") != nullptr)
+                return static_cast<ssize_t>(total);
+            continue;
+        }
+        if (n == 0)
+            return 0;
+        if (errno == EINTR)
+            continue;
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            struct pollfd pfd{};
+            pfd.fd = fd;
+            pfd.events = POLLIN;
+            if (poll(&pfd, 1, -1) <= 0)
+                return -1;
+            continue;
+        }
+        return -1;
+    }
+    return static_cast<ssize_t>(total);
+}
 
 void handle_client_connection(int client_fd)
 {
     char buffer[4096];
-    int bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+    ssize_t bytes = recv_http_request(client_fd, buffer, sizeof(buffer));
     if (bytes <= 0)
     {
         close(client_fd);
